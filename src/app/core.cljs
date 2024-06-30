@@ -1,6 +1,7 @@
 (ns app.core
   (:require
     [cljs.spec.alpha :as s]
+    [clojure.string :as str]
     [uix.core :as uix :refer [defui $]]
     [uix.dom]
     [app.hooks :as hooks]
@@ -92,23 +93,62 @@
       ($ footer))))
 
 
-(defui myapp []
+(defui org-agenda-files-list [{:keys [show]}]
   (let [
+        files (hooks/use-subscribe [:app/org-agenda-files])
         org-agenda-files-loaded (hooks/use-subscribe [:app/org-agenda-files-loaded])
         ]
-    ($ :.app
-       ($ :div.section 
-          ($ :div.container
-             ($ :h1.title
-                "Hello World from bulma!!")
-             (if org-agenda-files-loaded
-               ($ :p.subtitle "Loaded!")
-               ($ :p.subtitle "Loading"))
-             ($ :p.subtitle "Hello Alex!")
-             
-             )
-          )
-       ))
+    (when (and show org-agenda-files-loaded)
+      ($ :div
+         ($ :h2.subtitle "org agenda files")
+         ($ :div.buttons
+            (for [path files]
+              (let [file (nth (reverse (str/split path #"/")) 0)]
+                ($ :button.button {:key path} file))
+              ))))))
+
+
+(defui myapp []
+  (let [
+        [in-org-agenda-files? set-in-org-agenda-files!] (uix/use-state false)
+        [in-org-agenda-commands? set-in-org-agenda-commands!] (uix/use-state false)
+        [in-org-agenda-ql-views? set-in-org-agenda-ql-views!] (uix/use-state false)
+        show-subpage (or in-org-agenda-files? in-org-agenda-commands? in-org-agenda-ql-views?)
+        ]
+
+        ($ :.app
+           ($ :div.section
+              ($ :div.container
+                 ($ :h2.title
+                  "emacs web ui")
+                 (if show-subpage
+                   ($ :div.buttons
+                      ($ :button.button {:class "is-link"
+                                         :on-click (fn [^js _]
+                                                     (set-in-org-agenda-ql-views! false)
+                                                     (set-in-org-agenda-files! false)
+                                                     (set-in-org-agenda-commands! false)
+                                                     )
+                                         } "<<")
+                      )
+                   ($ :div.buttons
+                      ($ :button.button {:class "is-link"
+                                         :on-click (fn [^js _] (set-in-org-agenda-files! true))
+                                         } "org-agenda-files")
+                      ($ :button.button {:class "is-link"
+                                         :on-click (fn [^js _] (set-in-org-agenda-commands! true))
+                                         } "org-agenda-commands")
+                      ($ :button.button {:class "is-link"
+                                         :on-click (fn [^js _] (set-in-org-agenda-ql-views! true))
+                                         } "org-ql-views"))
+                   )
+                 ($ org-agenda-files-list {:show in-org-agenda-files?})
+                 )
+
+
+              )
+       )
+    )
 )
 
 
@@ -122,3 +162,7 @@
 
 (defn ^:export init []
   (render))
+
+(comment
+  (nth (reverse (str/split "Clojure/is/awesome!" #"/")) 0)
+)
