@@ -96,9 +96,9 @@
 (defui org-agenda-files-list [{:keys [show]}]
   (let [
         files (hooks/use-subscribe [:app/org-agenda-files])
-        org-agenda-files-loaded (hooks/use-subscribe [:app/org-agenda-files-loaded])
+        webui-config-loaded (hooks/use-subscribe [:app/webui-config-loaded])
         ]
-    (when (and show org-agenda-files-loaded)
+    (when (and show webui-config-loaded)
       ($ :div
          ($ :h2.subtitle "org agenda files")
          ($ :div.buttons
@@ -106,6 +106,20 @@
               (let [file (nth (reverse (str/split path #"/")) 0)]
                 ($ :button.button {:key path} file))
               ))))))
+
+
+(defui org-agenda-commands-list [{:keys [show]}]
+  (let [
+        commands (hooks/use-subscribe [:app/org-agenda-commands])
+        webui-config-loaded (hooks/use-subscribe [:app/webui-config-loaded])
+        ]
+    (js/console.log (clj->js commands))
+    (when (and show webui-config-loaded)
+      ($ :div
+         ($ :h2.subtitle "org agenda commands")
+         ($ :div.buttons
+            ($ :button.button {:key "key"} "cmd")
+            )))))
 
 
 (defui myapp []
@@ -143,9 +157,8 @@
                                          } "org-ql-views"))
                    )
                  ($ org-agenda-files-list {:show in-org-agenda-files?})
+                 ($ org-agenda-commands-list {:show in-org-agenda-commands?})
                  )
-
-
               )
        )
     )
@@ -157,7 +170,7 @@
 
 (defn render []
   (rf/dispatch-sync [:app/init-db app.db/default-db])
-  (rf/dispatch [:app/load-agenda-files])
+  (rf/dispatch [:app/webui-load-config])
   (uix.dom/render-root ($ myapp) root))
 
 (defn ^:export init []

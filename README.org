@@ -1,0 +1,93 @@
+
+* emacs-web-ui
+
+
+
+** What it is
+
+It is my attempt to provide WebUI to some of Emacs feature while I am away from keyboard. Typical use-cases: org-mode
+agenda (to do some shopping for example over the list of items in TODO or Agenda). I will try to start from some common
+org-mode tasks and extend it to other areas of my Emacs life.
+
+** Emacs side - literate programming
+
+When product will be ready I will publish it in Melpa. Until then, lets use some literate snippets.
+
+
+
+*** start httpd
+
+ #+BEGIN_SRC emacs-lisp :results output none
+ (require 'simple-httpd)
+ (setq httpd-root "/home/oleksii/dev/emacs-web-ui/public")
+ (httpd-start)
+ #+END_SRC
+
+*** servlet: webui-orgmode-settings
+
+#+begin_src emacs-lisp
+(defun webui-org-agenda-files-list ()
+  (coerce (org-agenda-files) 'vector))
+
+(setq org-agenda-commands-hash (make-hash-table))
+(puthash "a" "Agenda for current week or day" org-agenda-commands-hash)
+(puthash "/" "Multi-occur" org-agenda-commands-hash)
+(puthash "t" "List of all TODO entries" org-agenda-commands-hash)
+(puthash "m" "Matchy a TAGS/PROP/TODO query" org-agenda-commands-hash)
+(puthash "s" "Search for keywords" org-agenda-commands-hash)
+(puthash "?" "Find :FLAGGED: entries" org-agenda-commands-hash)
+(puthash "*" "Toggle sticky agenda views" org-agenda-commands-hash)
+(puthash "<" "Buffer, subtree/region restriction" org-agenda-commands-hash)
+(puthash ">" "Remove restriction" org-agenda-commands-hash)
+(puthash "e" "Export agenda views" org-agenda-commands-hash)
+(puthash "T" "Entries with special TODO kwd" org-agenda-commands-hash)
+(puthash "M" "Like m, but only TODO entries" org-agenda-commands-hash)
+(puthash "S" "Like s, but only TODO entries" org-agenda-commands-hash)
+(puthash "#" "List stuck projects" org-agenda-commands-hash)
+
+(setq webui-orgmode-settings-hash (make-hash-table))
+(puthash "org-agenda-files" (webui-org-agenda-files-list) webui-orgmode-settings-hash)
+(puthash "org-agenda-commands" org-agenda-commands-hash webui-orgmode-settings-hash)
+
+(defservlet webui-config application/json (path)
+  (json-insert webui-orgmode-settings-hash))
+#+end_src
+
+#+RESULTS:
+: httpd/webui-config
+
+#+BEGIN_SRC sh :dir ~ :results output replace :async :exports both
+curl -X GET -k -i 'http://localhost:8080/webui-config/' 2> /dev/null
+#+END_SRC
+
+**** test it                                                           :verb:
+get http://localhost:8080/webui-orgmode-settings/
+
+** How it is expected to expose the UI
+
+Because handling authentication in Emacs web server might be an issue, I decided to use simple trick - using commercial
+ngrok subscription you can get your localhost interface exposed via secure endpoint:
+
+#+begin_src bash
+ngrok http 8080 --domain=ok-emacs.ngrok.app --oauth google --oauth-allow-email alex.v.koval@gmail.com
+#+end_src
+
+** Status
+
+In early stages of development. Nothing useful here yet :-( 
+But since I am doing it mostly for myself, I will publish update as soon as anything is ready in Alpha stage.
+
+- Until then feel free to use my simple trick to export TODO items in HTML: https://github.com/avkoval/emacs.d#make-exported-org-mode-checkboxes-clickable
+
+** Development
+
+   #+begin_src bash
+   yarn install # install NPM deps
+   yarn dev # run dev build in watch mode with CLJS REPL
+   #+end_src
+
+## Production
+
+   #+begin_src bash
+   yarn release # build production bundle
+   #+end_src

@@ -2,7 +2,8 @@
 
 (def default-db
   {:todos (sorted-map-by >)
-   :org-agenda-files-loaded false
+   :webui-config-loaded false
    :org-agenda-files []
+   :org-agenda-commands {}
    }
   )

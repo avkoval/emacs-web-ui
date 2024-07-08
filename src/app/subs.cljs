@@ -5,10 +5,18 @@
   (fn [db _]
     (:todos db)))
 
-(rf/reg-sub :app/org-agenda-files-loaded
+(rf/reg-sub :app/webui-config-loaded
+  (fn [db _]
+    (:webui-config-loaded db)))
+
+(rf/reg-sub :app/org-agenda-commands-loaded
   (fn [db _]
     (:org-agenda-files-loaded db)))
 
 (rf/reg-sub :app/org-agenda-files
   (fn [db _]
     (:org-agenda-files db)))
+
+(rf/reg-sub :app/org-agenda-commands
+  (fn [db _]
+    (:org-agenda-commands db)))

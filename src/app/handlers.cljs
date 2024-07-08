@@ -1,7 +1,8 @@
 (ns app.handlers
   (:require [re-frame.core :as rf]
             [ajax.core :as ajax]
-            [app.fx :as fx]))
+            [app.fx :as fx]
+            [app.utils :as utils]))
 
 (def load-todos (rf/inject-cofx :store/todos "uix-starter/todos"))
 (def store-todos (fx/store-todos "uix-starter/todos"))
@@ -35,29 +36,30 @@
                                                :resolved :unresolved})))
 
 (rf/reg-event-db
- :app/assoc-org-agenda-files
+ :app/assoc-webui-config
  (fn [db [_ response]]
-   (js/console.log response)
-   (-> db
-       (assoc-in [:org-agenda-files-loaded] true)
-       (assoc-in [:org-agenda-files] (js->clj response))
-       ))
-)
+   (let [data (js->clj response)]
+     (js/console.log "1- " response)
+     (js/console.log "2-" data)
+     (-> db
+         (assoc-in [:webui-config-loaded] true)
+         (utils/deep-merge data)
+         ))))
 
 (rf/reg-event-fx
- :app/load-org-agenda-files-failure
+ :app/webui-config-call-failure
  (fn [db [_ response]]
-   (js/alert "failure")
-   (assoc db :org-agenda-files-load-failure true))
-)
+   (js/console.log "webui-config-call-failure" response)
+   (assoc db :webui-config-call-failure true)))
 
 
 (rf/reg-event-fx                             ;; note the trailing -fx
-  :app/load-agenda-files                        ;; usage:  (dispatch [:handler-with-http])
+  :app/webui-load-config                        ;; usage:  (dispatch [:handler-with-http])
   (fn [{:keys [db]} _]                    ;; the first param will be "world"
     {:db (assoc db :org-agenda-files-loaded false)   ;; causes the twirly-waiting-dialog to show??
      :http-xhrio {:method          :get
-                  :uri             "org-agenda-files/"
+                  :uri             "webui-config/"
                   :response-format (ajax/json-response-format {:keywords? true})  ;; IMPORTANT!: You must provide this.
-                  :on-success      [:app/assoc-org-agenda-files]
-                  :on-failure      [:app/load-org-agenda-files-failure]}}))
+                  :on-success      [:app/assoc-webui-config]
+                  :on-failure      [:app/webui-config-call-failure]}}))
+
